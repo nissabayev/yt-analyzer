@@ -308,7 +308,8 @@ app.post('/api/analyze', async (req, res) => {
     filtered.sort((a, b) => b.likeCount - a.likeCount);
 
     const keywords = extractTopKeywords(filtered);
-    const [sentiment, summary] = await Promise.all([
+    const [overallSentiment, relevantSentiment, summary] = await Promise.all([
+      analyzeSentiment(allComments),
       analyzeSentiment(filtered),
       generateSummary(filtered, stats.title),
     ]);
@@ -318,7 +319,8 @@ app.post('/api/analyze', async (req, res) => {
       totalCommentsFetched: allComments.length,
       relevantCount: filtered.length,
       keywords,
-      sentiment,
+      overallSentiment: overallSentiment.aggregate,
+      relevantSentiment,
       summary,
     });
   } catch (err) {

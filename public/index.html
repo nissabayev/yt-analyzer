@@ -57,7 +57,21 @@
 
       <!-- Sentiment -->
       <section class="sentiment-section">
-        <h3>Sentiment Breakdown <span id="relevantCount" class="relevant-count"></span></h3>
+        <h3>All Comments Sentiment <span id="allCount" class="relevant-count"></span></h3>
+        <div class="sentiment-bar-container">
+          <div class="sentiment-bar">
+            <div id="barAllPositive" class="bar-segment bar-positive"></div>
+            <div id="barAllNeutral" class="bar-segment bar-neutral"></div>
+            <div id="barAllNegative" class="bar-segment bar-negative"></div>
+          </div>
+          <div class="sentiment-labels">
+            <span class="label-positive"><span class="dot dot-positive"></span> Positive <strong id="pctAllPositive">0%</strong></span>
+            <span class="label-neutral"><span class="dot dot-neutral"></span> Neutral <strong id="pctAllNeutral">0%</strong></span>
+            <span class="label-negative"><span class="dot dot-negative"></span> Negative <strong id="pctAllNegative">0%</strong></span>
+          </div>
+        </div>
+
+        <h3 class="mt-24">Relevant Comments Sentiment <span id="relevantCount" class="relevant-count"></span></h3>
         <div class="sentiment-bar-container">
           <div class="sentiment-bar">
             <div id="barPositive" class="bar-segment bar-positive"></div>

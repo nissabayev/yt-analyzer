@@ -58,7 +58,7 @@ function fmt(n) {
 }
 
 function renderResults(data) {
-  const { stats, keywords, sentiment } = data;
+  const { stats, keywords, overallSentiment, relevantSentiment } = data;
 
   // Video card
   document.getElementById('thumbnail').src = stats.thumbnail;
@@ -74,12 +74,19 @@ function renderResults(data) {
   document.getElementById('statComments').textContent = fmt(stats.commentCount);
   document.getElementById('statEngagement').textContent = stats.engagement + '%';
 
-  // Relevant count
-  document.getElementById('relevantCount').textContent =
-    `(${data.relevantCount} of ${data.totalCommentsFetched} comments match keywords)`;
+  // All comments sentiment bar
+  document.getElementById('allCount').textContent = `(${data.totalCommentsFetched} comments)`;
+  document.getElementById('barAllPositive').style.width = overallSentiment.positive + '%';
+  document.getElementById('barAllNeutral').style.width = overallSentiment.neutral + '%';
+  document.getElementById('barAllNegative').style.width = overallSentiment.negative + '%';
+  document.getElementById('pctAllPositive').textContent = overallSentiment.positive + '%';
+  document.getElementById('pctAllNeutral').textContent = overallSentiment.neutral + '%';
+  document.getElementById('pctAllNegative').textContent = overallSentiment.negative + '%';
 
-  // Sentiment bar
-  const agg = sentiment.aggregate;
+  // Relevant comments sentiment bar
+  const agg = relevantSentiment.aggregate;
+  document.getElementById('relevantCount').textContent =
+    `(${data.relevantCount} of ${data.totalCommentsFetched} match keywords)`;
   document.getElementById('barPositive').style.width = agg.positive + '%';
   document.getElementById('barNeutral').style.width = agg.neutral + '%';
   document.getElementById('barNegative').style.width = agg.negative + '%';
@@ -103,7 +110,7 @@ function renderResults(data) {
 function renderComments() {
   if (!analysisData) return;
   const list = document.getElementById('commentsList');
-  let comments = analysisData.sentiment.comments;
+  let comments = analysisData.relevantSentiment.comments;
 
   if (activeTab === 'questions') {
     comments = comments.filter(c => c.isQuestion);

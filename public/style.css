@@ -225,6 +225,10 @@ header h1 {
   margin-bottom: 16px;
 }
 
+.mt-24 {
+  margin-top: 24px;
+}
+
 .relevant-count {
   color: var(--text-dim);
   font-weight: 400;
