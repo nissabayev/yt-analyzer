@@ -74,25 +74,16 @@ function renderResults(data) {
   document.getElementById('statComments').textContent = fmt(stats.commentCount);
   document.getElementById('statEngagement').textContent = stats.engagement + '%';
 
-  // All comments sentiment bar
-  document.getElementById('allCount').textContent = `(${data.totalCommentsFetched} comments)`;
-  document.getElementById('barAllPositive').style.width = overallSentiment.positive + '%';
-  document.getElementById('barAllNeutral').style.width = overallSentiment.neutral + '%';
-  document.getElementById('barAllNegative').style.width = overallSentiment.negative + '%';
-  document.getElementById('pctAllPositive').textContent = overallSentiment.positive + '%';
-  document.getElementById('pctAllNeutral').textContent = overallSentiment.neutral + '%';
-  document.getElementById('pctAllNegative').textContent = overallSentiment.negative + '%';
+  // All comments sentiment
+  const allTotal = data.totalCommentsFetched;
+  document.getElementById('allCount').textContent = `(${allTotal} comments)`;
+  renderSentimentCard('All', overallSentiment, allTotal);
 
-  // Relevant comments sentiment bar
+  // Relevant comments sentiment
   const agg = relevantSentiment.aggregate;
-  document.getElementById('relevantCount').textContent =
-    `(${data.relevantCount} of ${data.totalCommentsFetched} match keywords)`;
-  document.getElementById('barPositive').style.width = agg.positive + '%';
-  document.getElementById('barNeutral').style.width = agg.neutral + '%';
-  document.getElementById('barNegative').style.width = agg.negative + '%';
-  document.getElementById('pctPositive').textContent = agg.positive + '%';
-  document.getElementById('pctNeutral').textContent = agg.neutral + '%';
-  document.getElementById('pctNegative').textContent = agg.negative + '%';
+  const relTotal = data.relevantCount;
+  document.getElementById('relevantCount').textContent = `(${relTotal} of ${allTotal})`;
+  renderSentimentCard('Rel', agg, relTotal);
 
   // Summary
   document.getElementById('summaryText').textContent = data.summary || '';
@@ -105,6 +96,65 @@ function renderResults(data) {
 
   // Comments
   renderComments();
+}
+
+function renderSentimentCard(prefix, agg, total) {
+  const circ = 2 * Math.PI * 60; // circumference for r=60
+  const pos = agg.positive;
+  const neg = agg.negative;
+  const neu = agg.neutral;
+
+  // Donut segments: positive, then negative, then neutral
+  const posLen = (pos / 100) * circ;
+  const negLen = (neg / 100) * circ;
+  const neuLen = (neu / 100) * circ;
+
+  const posEl = document.getElementById(`donut${prefix}Positive`);
+  const negEl = document.getElementById(`donut${prefix}Negative`);
+  const neuEl = document.getElementById(`donut${prefix}Neutral`);
+
+  posEl.style.strokeDasharray = `${posLen} ${circ}`;
+  posEl.style.strokeDashoffset = '0';
+
+  negEl.style.strokeDasharray = `${negLen} ${circ}`;
+  negEl.style.strokeDashoffset = `${-posLen}`;
+
+  neuEl.style.strokeDasharray = `${neuLen} ${circ}`;
+  neuEl.style.strokeDashoffset = `${-(posLen + negLen)}`;
+
+  // Center label — show dominant sentiment
+  const dominant = pos >= neg && pos >= neu ? 'positive' : neg >= pos && neg >= neu ? 'negative' : 'neutral';
+  const dominantPct = dominant === 'positive' ? pos : dominant === 'negative' ? neg : neu;
+  const colors = { positive: 'var(--positive)', negative: 'var(--negative)', neutral: 'var(--neutral)' };
+  const icons = { positive: '&#128578;', negative: '&#128543;', neutral: '&#128528;' };
+  const iconBgs = { positive: 'rgba(34,197,94,0.15)', negative: 'rgba(239,68,68,0.15)', neutral: 'rgba(100,116,139,0.15)' };
+
+  document.getElementById(`donut${prefix}Pct`).textContent = Math.round(dominantPct) + '%';
+  const labelEl = document.getElementById(`donut${prefix}Label`);
+  labelEl.textContent = dominant.toUpperCase();
+  labelEl.style.color = colors[dominant];
+
+  // Icon
+  const iconId = prefix === 'All' ? 'allSentimentIcon' : 'relSentimentIcon';
+  const iconEl = document.getElementById(iconId);
+  iconEl.innerHTML = icons[dominant];
+  iconEl.style.background = iconBgs[dominant];
+
+  // Legend bars and counts
+  const posCount = Math.round((pos / 100) * total);
+  const negCount = Math.round((neg / 100) * total);
+  const neuCount = Math.round((neu / 100) * total);
+
+  const suffix = prefix === 'All' ? 'All' : '';
+  document.getElementById(`pct${suffix}Positive`).textContent = pos + '%';
+  document.getElementById(`pct${suffix}Neutral`).textContent = neu + '%';
+  document.getElementById(`pct${suffix}Negative`).textContent = neg + '%';
+  document.getElementById(`bar${suffix}Positive`).style.width = pos + '%';
+  document.getElementById(`bar${suffix}Neutral`).style.width = neu + '%';
+  document.getElementById(`bar${suffix}Negative`).style.width = neg + '%';
+  document.getElementById(`count${suffix}Positive`).textContent = posCount + ' comments';
+  document.getElementById(`count${suffix}Neutral`).textContent = neuCount + ' comments';
+  document.getElementById(`count${suffix}Negative`).textContent = negCount + ' comments';
 }
 
 function renderComments() {

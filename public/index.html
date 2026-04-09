@@ -55,33 +55,102 @@
         </div>
       </section>
 
-      <!-- Sentiment -->
-      <section class="sentiment-section">
-        <h3>All Comments Sentiment <span id="allCount" class="relevant-count"></span></h3>
-        <div class="sentiment-bar-container">
-          <div class="sentiment-bar">
-            <div id="barAllPositive" class="bar-segment bar-positive"></div>
-            <div id="barAllNeutral" class="bar-segment bar-neutral"></div>
-            <div id="barAllNegative" class="bar-segment bar-negative"></div>
-          </div>
-          <div class="sentiment-labels">
-            <span class="label-positive"><span class="dot dot-positive"></span> Positive <strong id="pctAllPositive">0%</strong></span>
-            <span class="label-neutral"><span class="dot dot-neutral"></span> Neutral <strong id="pctAllNeutral">0%</strong></span>
-            <span class="label-negative"><span class="dot dot-negative"></span> Negative <strong id="pctAllNegative">0%</strong></span>
+      <!-- Sentiment: All Comments -->
+      <section class="sentiment-card">
+        <div class="sentiment-header">
+          <div class="sentiment-icon" id="allSentimentIcon"></div>
+          <div>
+            <h3>All Comments</h3>
+            <p class="sentiment-subtitle">Emotional tone of all comments <span id="allCount"></span></p>
           </div>
         </div>
-
-        <h3 class="mt-24">Relevant Comments Sentiment <span id="relevantCount" class="relevant-count"></span></h3>
-        <div class="sentiment-bar-container">
-          <div class="sentiment-bar">
-            <div id="barPositive" class="bar-segment bar-positive"></div>
-            <div id="barNeutral" class="bar-segment bar-neutral"></div>
-            <div id="barNegative" class="bar-segment bar-negative"></div>
+        <div class="sentiment-body">
+          <div class="donut-wrapper">
+            <svg class="donut" viewBox="0 0 160 160">
+              <circle class="donut-bg" cx="80" cy="80" r="60" />
+              <circle id="donutAllPositive" class="donut-seg donut-positive" cx="80" cy="80" r="60" />
+              <circle id="donutAllNegative" class="donut-seg donut-negative" cx="80" cy="80" r="60" />
+              <circle id="donutAllNeutral" class="donut-seg donut-neutral" cx="80" cy="80" r="60" />
+            </svg>
+            <div class="donut-center">
+              <span class="donut-pct" id="donutAllPct">0%</span>
+              <span class="donut-label" id="donutAllLabel">POSITIVE</span>
+            </div>
           </div>
-          <div class="sentiment-labels">
-            <span class="label-positive"><span class="dot dot-positive"></span> Positive <strong id="pctPositive">0%</strong></span>
-            <span class="label-neutral"><span class="dot dot-neutral"></span> Neutral <strong id="pctNeutral">0%</strong></span>
-            <span class="label-negative"><span class="dot dot-negative"></span> Negative <strong id="pctNegative">0%</strong></span>
+          <div class="sentiment-legend">
+            <div class="legend-row">
+              <span class="dot dot-positive"></span>
+              <span class="legend-name">Positive</span>
+              <span class="legend-pct" id="pctAllPositive">0%</span>
+            </div>
+            <div class="legend-bar-track"><div class="legend-bar legend-bar-positive" id="barAllPositive"></div></div>
+            <span class="legend-count" id="countAllPositive">0 comments</span>
+
+            <div class="legend-row">
+              <span class="dot dot-neutral"></span>
+              <span class="legend-name">Neutral</span>
+              <span class="legend-pct" id="pctAllNeutral">0%</span>
+            </div>
+            <div class="legend-bar-track"><div class="legend-bar legend-bar-neutral" id="barAllNeutral"></div></div>
+            <span class="legend-count" id="countAllNeutral">0 comments</span>
+
+            <div class="legend-row">
+              <span class="dot dot-negative"></span>
+              <span class="legend-name">Negative</span>
+              <span class="legend-pct" id="pctAllNegative">0%</span>
+            </div>
+            <div class="legend-bar-track"><div class="legend-bar legend-bar-negative" id="barAllNegative"></div></div>
+            <span class="legend-count" id="countAllNegative">0 comments</span>
+          </div>
+        </div>
+      </section>
+
+      <!-- Sentiment: Relevant Comments -->
+      <section class="sentiment-card">
+        <div class="sentiment-header">
+          <div class="sentiment-icon" id="relSentimentIcon"></div>
+          <div>
+            <h3>Relevant Comments</h3>
+            <p class="sentiment-subtitle">Emotional tone of keyword matches <span id="relevantCount"></span></p>
+          </div>
+        </div>
+        <div class="sentiment-body">
+          <div class="donut-wrapper">
+            <svg class="donut" viewBox="0 0 160 160">
+              <circle class="donut-bg" cx="80" cy="80" r="60" />
+              <circle id="donutRelPositive" class="donut-seg donut-positive" cx="80" cy="80" r="60" />
+              <circle id="donutRelNegative" class="donut-seg donut-negative" cx="80" cy="80" r="60" />
+              <circle id="donutRelNeutral" class="donut-seg donut-neutral" cx="80" cy="80" r="60" />
+            </svg>
+            <div class="donut-center">
+              <span class="donut-pct" id="donutRelPct">0%</span>
+              <span class="donut-label" id="donutRelLabel">POSITIVE</span>
+            </div>
+          </div>
+          <div class="sentiment-legend">
+            <div class="legend-row">
+              <span class="dot dot-positive"></span>
+              <span class="legend-name">Positive</span>
+              <span class="legend-pct" id="pctPositive">0%</span>
+            </div>
+            <div class="legend-bar-track"><div class="legend-bar legend-bar-positive" id="barPositive"></div></div>
+            <span class="legend-count" id="countPositive">0 comments</span>
+
+            <div class="legend-row">
+              <span class="dot dot-neutral"></span>
+              <span class="legend-name">Neutral</span>
+              <span class="legend-pct" id="pctNeutral">0%</span>
+            </div>
+            <div class="legend-bar-track"><div class="legend-bar legend-bar-neutral" id="barNeutral"></div></div>
+            <span class="legend-count" id="countNeutral">0 comments</span>
+
+            <div class="legend-row">
+              <span class="dot dot-negative"></span>
+              <span class="legend-name">Negative</span>
+              <span class="legend-pct" id="pctNegative">0%</span>
+            </div>
+            <div class="legend-bar-track"><div class="legend-bar legend-bar-negative" id="barNegative"></div></div>
+            <span class="legend-count" id="countNegative">0 comments</span>
           </div>
         </div>
       </section>

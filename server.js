@@ -136,7 +136,7 @@ async function fetchAllComments(videoId) {
 
 // --- Comment filtering ---
 
-const KEYWORDS = ['AI', 'Higgsfield', 'Seedance', 'video gen', 'generative', 'prompt'];
+const KEYWORDS = ['\\bAI\\b', 'Higgsfield', 'Seedance', 'video gen', 'generative', '\\bprompt\\b'];
 const keywordRegex = new RegExp(KEYWORDS.join('|'), 'i');
 
 function filterComments(comments) {
