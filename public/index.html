@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>YT Analyzer</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1>YT Analyzer</h1>
+      <p class="subtitle">Paste a YouTube URL to analyze engagement &amp; sentiment</p>
+    </header>
+
+    <div class="search-bar">
+      <input type="text" id="urlInput" placeholder="https://www.youtube.com/watch?v=..." autocomplete="off">
+      <button id="analyzeBtn">Analyze</button>
+    </div>
+
+    <div id="error" class="error hidden"></div>
+
+    <div id="loading" class="loading hidden">
+      <div class="spinner"></div>
+      <p>Fetching video data &amp; analyzing comments...</p>
+    </div>
+
+    <div id="results" class="hidden">
+      <!-- Video Card -->
+      <section class="video-card">
+        <img id="thumbnail" src="" alt="Video thumbnail">
+        <div class="video-info">
+          <h2 id="videoTitle"></h2>
+          <p id="videoChannel" class="channel"></p>
+          <p id="videoDate" class="date"></p>
+        </div>
+      </section>
+
+      <section class="stats-grid">
+        <div class="stat-card">
+          <span class="stat-value" id="statViews">—</span>
+          <span class="stat-label">Views</span>
+        </div>
+        <div class="stat-card">
+          <span class="stat-value" id="statLikes">—</span>
+          <span class="stat-label">Likes</span>
+        </div>
+        <div class="stat-card">
+          <span class="stat-value" id="statComments">—</span>
+          <span class="stat-label">Comments</span>
+        </div>
+        <div class="stat-card">
+          <span class="stat-value" id="statEngagement">—</span>
+          <span class="stat-label">Engagement %</span>
+        </div>
+      </section>
+
+      <!-- Sentiment -->
+      <section class="sentiment-section">
+        <h3>Sentiment Breakdown <span id="relevantCount" class="relevant-count"></span></h3>
+        <div class="sentiment-bar-container">
+          <div class="sentiment-bar">
+            <div id="barPositive" class="bar-segment bar-positive"></div>
+            <div id="barNeutral" class="bar-segment bar-neutral"></div>
+            <div id="barNegative" class="bar-segment bar-negative"></div>
+          </div>
+          <div class="sentiment-labels">
+            <span class="label-positive"><span class="dot dot-positive"></span> Positive <strong id="pctPositive">0%</strong></span>
+            <span class="label-neutral"><span class="dot dot-neutral"></span> Neutral <strong id="pctNeutral">0%</strong></span>
+            <span class="label-negative"><span class="dot dot-negative"></span> Negative <strong id="pctNegative">0%</strong></span>
+          </div>
+        </div>
+      </section>
+
+      <!-- Summary -->
+      <section class="summary-section">
+        <h3>Summary</h3>
+        <p id="summaryText" class="summary-text"></p>
+      </section>
+
+      <!-- Keywords -->
+      <section class="keywords-section">
+        <h3>Top Keywords</h3>
+        <div id="keywordPills" class="keyword-pills"></div>
+      </section>
+
+      <!-- Comments -->
+      <section class="comments-section">
+        <div class="tabs">
+          <button class="tab active" data-tab="all">All</button>
+          <button class="tab" data-tab="positive">Positive</button>
+          <button class="tab" data-tab="negative">Negative</button>
+          <button class="tab" data-tab="neutral">Neutral</button>
+          <button class="tab" data-tab="questions">Questions</button>
+        </div>
+        <div id="commentsList" class="comments-list"></div>
+      </section>
+    </div>
+  </div>
+
+  <script src="script.js"></script>
+</body>
+</html>

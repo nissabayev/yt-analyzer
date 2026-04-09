@@ -1,0 +1,14 @@
+{
+  "name": "yt-analyzer",
+  "version": "1.0.0",
+  "description": "YouTube video analyzer with sentiment analysis",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "dotenv": "^16.4.7",
+    "express": "^4.21.2",
+    "@google/generative-ai": "^0.21.0"
+  }
+}
