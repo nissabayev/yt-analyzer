@@ -210,12 +210,17 @@ async function analyzeSentiment(comments) {
 
   for (let i = 0; i < comments.length; i += batchSize) {
     const batch = comments.slice(i, i + batchSize);
-    const prompt = `You are a sentiment classifier for YouTube comments. Classify each comment as exactly one of: positive, negative, or neutral.
+    const prompt = `You are a sentiment classifier for YouTube comments, analyzing them from the perspective of Higgsfield AI — an AI video generation company. Classify each comment as exactly one of: positive, negative, or neutral.
 
 Guidelines:
-- "positive" = praise, excitement, enthusiasm, support, gratitude, compliments, optimism (e.g. "This is amazing!", "Best tool ever!", "Great video!")
-- "negative" = criticism, frustration, anger, disappointment, complaints, fear, concern (e.g. "This is terrible", "I hate this", "This will destroy jobs")
+- "positive" = praise, excitement, enthusiasm, support for AI or Higgsfield, compliments about the video/product, optimism about AI tools
+- "negative" = criticism of AI/Higgsfield, promoting competitors (Seedance, Dreamina, Runway, Pika, Kling, Sora, Luma etc.), fear/concern about AI, frustration, disappointment
 - "neutral" = purely factual, informational, balanced without clear emotion, or genuinely mixed
+
+Important context-aware rules:
+- Comments promoting or praising competitor products (Seedance, Dreamina, Runway, Pika, Kling, Sora, Luma, etc.) are NEGATIVE from Higgsfield's perspective
+- Comments saying content is "not AI" or defending human creativity are actually POSITIVE — they praise the quality as being so good it seems human-made
+- Comments expressing worry that AI will replace humans are NEGATIVE
 - Comments with exclamation marks expressing enthusiasm are usually positive, not neutral
 - If a comment expresses a clear opinion (good or bad), it is NOT neutral
 
