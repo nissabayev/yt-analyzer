@@ -182,6 +182,7 @@ function renderComments() {
           <span class="sentiment-tag ${c.sentiment}">${c.sentiment}</span>
         </div>
         <p class="comment-text">${esc(c.text)}</p>
+        ${c.translation ? `<p class="comment-translation">${esc(c.translation)}</p>` : ''}
         <div class="comment-likes">&#x1F44D; ${c.likeCount}</div>
       </div>
     </div>

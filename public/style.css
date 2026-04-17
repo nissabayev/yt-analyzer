@@ -543,6 +543,14 @@ header h1 {
   word-break: break-word;
 }
 
+.comment-translation {
+  font-size: 0.8rem;
+  color: var(--text-dim);
+  font-style: italic;
+  margin-top: 6px;
+  line-height: 1.4;
+}
+
 .comment-likes {
   font-size: 0.8rem;
   color: var(--text-dim);
