@@ -221,12 +221,10 @@ Guidelines:
 - Comments with exclamation marks expressing enthusiasm are usually positive
 - If a comment expresses a clear opinion (good or bad), it is NOT neutral
 
-Also determine:
-- isQuestion: does the comment contain a question? (true/false)
-- If the comment is NOT in English, provide a brief English translation in the "translation" field. If it IS in English, set translation to null.
+Also determine if the comment contains a question (true/false).
 
 Return ONLY a JSON array, no other text:
-[{"index": 0, "sentiment": "positive", "isQuestion": false, "translation": null}]
+[{"index": 0, "sentiment": "positive", "isQuestion": false}]
 
 Comments:
 ${batch.map((c, idx) => `[${idx}] ${c.text}`).join('\n')}`;
@@ -244,7 +242,6 @@ ${batch.map((c, idx) => `[${idx}] ${c.text}`).join('\n')}`;
             ...comment,
             sentiment: entry.sentiment || 'neutral',
             isQuestion: entry.isQuestion || false,
-            translation: entry.translation || null,
           });
         }
       }
@@ -269,6 +266,52 @@ ${batch.map((c, idx) => `[${idx}] ${c.text}`).join('\n')}`;
       neutral: total ? Math.round((neu / total) * 1000) / 10 : 0,
     },
   };
+}
+
+// --- Translation ---
+
+function isNonEnglish(text) {
+  // If more than 30% of characters are non-ASCII, likely non-English
+  const nonAscii = text.replace(/[\x00-\x7F]/g, '').length;
+  return nonAscii / text.length > 0.3;
+}
+
+async function translateComments(comments) {
+  const toTranslate = [];
+  const indices = [];
+  for (let i = 0; i < comments.length; i++) {
+    if (isNonEnglish(comments[i].text)) {
+      toTranslate.push(comments[i].text);
+      indices.push(i);
+    }
+  }
+  if (!toTranslate.length) return comments;
+
+  const batchSize = 30;
+  for (let i = 0; i < toTranslate.length; i += batchSize) {
+    const batch = toTranslate.slice(i, i + batchSize);
+    const batchIndices = indices.slice(i, i + batchSize);
+    const prompt = `Translate each of the following comments to English. Return ONLY a JSON array of strings, one translation per comment, in the same order. Keep translations concise.
+
+Comments:
+${batch.map((t, idx) => `[${idx}] ${t}`).join('\n')}`;
+
+    try {
+      const text = await callGemini(prompt);
+      const jsonMatch = text.match(/\[[\s\S]*\]/);
+      if (jsonMatch) {
+        const translations = JSON.parse(jsonMatch[0]);
+        for (let j = 0; j < translations.length; j++) {
+          if (batchIndices[j] !== undefined) {
+            comments[batchIndices[j]].translation = translations[j];
+          }
+        }
+      }
+    } catch (err) {
+      console.warn('Translation batch failed:', err.message);
+    }
+  }
+  return comments;
 }
 
 // --- Summary ---
@@ -318,6 +361,9 @@ app.post('/api/analyze', async (req, res) => {
       analyzeSentiment(filtered),
       generateSummary(filtered, stats.title),
     ]);
+
+    // Translate non-English relevant comments
+    await translateComments(relevantSentiment.comments);
 
     res.json({
       stats,
