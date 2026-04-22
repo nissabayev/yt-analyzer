@@ -210,16 +210,24 @@ async function analyzeSentiment(comments) {
 
   for (let i = 0; i < comments.length; i += batchSize) {
     const batch = comments.slice(i, i + batchSize);
-    const prompt = `You are a sentiment classifier for YouTube comments. Classify each comment's emotional tone as exactly one of: positive, negative, or neutral.
+    const prompt = `You are a sentiment classifier for YouTube comments. Classify each comment's emotional tone toward the video/content/product as exactly one of: positive, negative, or neutral.
 
 Guidelines:
 - "positive" = praise, excitement, enthusiasm, support, gratitude, compliments, optimism, awe, amazement (e.g. "This is amazing!", "Incredible work!", "Great video!")
-- "negative" = criticism, frustration, anger, disappointment, complaints, fear, worry, sadness (e.g. "This is terrible", "I hate this", "This scares me")
-- "neutral" = purely factual, informational, balanced without clear emotion, or genuinely mixed
-- Classify based on the actual emotional tone of the comment, not whether the topic is good or bad
-- Comments expressing excitement or amazement about any product or technology are POSITIVE
-- Comments with exclamation marks expressing enthusiasm are usually positive
-- If a comment expresses a clear opinion (good or bad), it is NOT neutral
+- "negative" = criticism, frustration, anger, disappointment, complaints, fear, worry, sadness directed at the content/product itself (e.g. "This is terrible", "I hate this", "Bad quality")
+- "neutral" = purely factual, informational, or no clear stance
+- Classify based on the COMMENTER'S OVERALL STANCE toward the video/product, not surface-level word choice
+
+CRITICAL nuance rules — read carefully, these are common misclassifications:
+1. Phrases that USE negative words to PRAISE quality are POSITIVE. Examples:
+   - "The end of AI slop" → POSITIVE (means this is so good it ends bad AI content)
+   - "This killed the competition" → POSITIVE
+   - "No more excuses for bad AI videos" → POSITIVE
+2. MIXED reviews with substantive praise → POSITIVE. If a comment gives specific criticism BUT ends with clear praise like "hats off", "amazing effort", "leaps and bounds beyond anything", "incredible work despite X" → classify POSITIVE. The overall stance is supportive.
+3. Complaints about PRICING, CREDITS, or BUSINESS MODEL (not the content quality itself) → POSITIVE or NEUTRAL, not negative. The commenter often still values the product; they're frustrated with cost. Only mark negative if they're slamming the actual content/output quality.
+4. Constructive feedback framed supportively ("I wish you'd done X, but overall great") → POSITIVE.
+5. Pure content slams with no praise ("what was this", "AI has limits", "terrible", "cringe") → NEGATIVE.
+6. Sarcasm praising the work ironically → judge by intent; genuine ironic praise is positive.
 
 Also determine if the comment contains a question (true/false).
 
@@ -285,6 +293,7 @@ async function translateComments(comments) {
       indices.push(i);
     }
   }
+  console.log(`Translating ${toTranslate.length} non-English comments...`);
   if (!toTranslate.length) return comments;
 
   const batchSize = 30;
@@ -301,11 +310,14 @@ ${batch.map((t, idx) => `[${idx}] ${t}`).join('\n')}`;
       const jsonMatch = text.match(/\[[\s\S]*\]/);
       if (jsonMatch) {
         const translations = JSON.parse(jsonMatch[0]);
+        console.log(`Got ${translations.length} translations`);
         for (let j = 0; j < translations.length; j++) {
           if (batchIndices[j] !== undefined) {
             comments[batchIndices[j]].translation = translations[j];
           }
         }
+      } else {
+        console.warn('No JSON array in translation response');
       }
     } catch (err) {
       console.warn('Translation batch failed:', err.message);
