@@ -187,7 +187,7 @@ async function callGemini(prompt) {
   for (let i = 0; i < maxRetries; i++) {
     try {
       const genAI = new GoogleGenerativeAI(getGeminiKey());
-      const model = genAI.getGenerativeModel({ model: 'gemini-2.0-flash' });
+      const model = genAI.getGenerativeModel({ model: 'gemini-3.5-flash' });
       const result = await model.generateContent(prompt);
       return result.response.text();
     } catch (err) {
@@ -219,15 +219,22 @@ Guidelines:
 - Classify based on the COMMENTER'S OVERALL STANCE toward the video/product, not surface-level word choice
 
 CRITICAL nuance rules — read carefully, these are common misclassifications:
-1. Phrases that USE negative words to PRAISE quality are POSITIVE. Examples:
-   - "The end of AI slop" → POSITIVE (means this is so good it ends bad AI content)
+1. Calling the video/content itself "AI slop", "slop", "trash", "garbage", "cringe", or similar is ALWAYS NEGATIVE — even if phrased shortly or casually. Examples:
+   - "Holy AI slop thumbnail" → NEGATIVE (mocking the thumbnail as low-quality AI)
+   - "had to use ai slop" → NEGATIVE (criticizing the creator for using AI slop)
+   - "this is just AI slop" → NEGATIVE
+   - "ai slop ✋" → NEGATIVE
+   Only treat "slop"-language as positive when it CLEARLY frames the video as the SOLUTION to slop, with explicit praise wording. Examples that ARE positive:
+   - "This is the end of AI slop — finally quality" → POSITIVE
+   - "No more excuses for bad AI videos, this nailed it" → POSITIVE
+   When in doubt about a "slop" comment, classify NEGATIVE.
+2. Phrases that USE negative words to PRAISE quality are POSITIVE only when the praise is explicit. Example:
    - "This killed the competition" → POSITIVE
-   - "No more excuses for bad AI videos" → POSITIVE
-2. MIXED reviews with substantive praise → POSITIVE. If a comment gives specific criticism BUT ends with clear praise like "hats off", "amazing effort", "leaps and bounds beyond anything", "incredible work despite X" → classify POSITIVE. The overall stance is supportive.
-3. Complaints about PRICING, CREDITS, or BUSINESS MODEL (not the content quality itself) → POSITIVE or NEUTRAL, not negative. The commenter often still values the product; they're frustrated with cost. Only mark negative if they're slamming the actual content/output quality.
-4. Constructive feedback framed supportively ("I wish you'd done X, but overall great") → POSITIVE.
-5. Pure content slams with no praise ("what was this", "AI has limits", "terrible", "cringe") → NEGATIVE.
-6. Sarcasm praising the work ironically → judge by intent; genuine ironic praise is positive.
+3. MIXED reviews with substantive praise → POSITIVE. If a comment gives specific criticism BUT ends with clear praise like "hats off", "amazing effort", "leaps and bounds beyond anything", "incredible work despite X" → classify POSITIVE. The overall stance is supportive.
+4. Complaints about PRICING, CREDITS, or BUSINESS MODEL (not the content quality itself) → POSITIVE or NEUTRAL, not negative. The commenter often still values the product; they're frustrated with cost. Only mark negative if they're slamming the actual content/output quality.
+5. Constructive feedback framed supportively ("I wish you'd done X, but overall great") → POSITIVE.
+6. Pure content slams with no praise ("what was this", "AI has limits", "terrible", "cringe", "ai slop") → NEGATIVE.
+7. Sarcasm praising the work ironically → judge by intent; genuine ironic praise is positive. Sarcastic insults ("wow what a masterpiece /s", "amazing slop") → NEGATIVE.
 
 Also determine if the comment contains a question (true/false).
 
