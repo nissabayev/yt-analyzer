@@ -30,13 +30,13 @@ function rotateYouTubeKey() {
   ytKeyIndex++;
 }
 
+// Round-robin: hand out the next key on every call so parallel Gemini requests
+// spread across all keys instead of piling onto one.
 function getGeminiKey() {
   if (!geminiKeys.length) throw new Error('No Gemini API keys configured');
-  return geminiKeys[geminiKeyIndex % geminiKeys.length];
-}
-
-function rotateGeminiKey() {
+  const key = geminiKeys[geminiKeyIndex % geminiKeys.length];
   geminiKeyIndex++;
+  return key;
 }
 
 // --- YouTube helpers ---
@@ -182,20 +182,54 @@ function extractTopKeywords(comments, topN = 10) {
 
 // --- Gemini helper ---
 
-async function callGemini(prompt) {
-  const maxRetries = geminiKeys.length;
-  for (let i = 0; i < maxRetries; i++) {
-    try {
-      const genAI = new GoogleGenerativeAI(getGeminiKey());
-      const model = genAI.getGenerativeModel({ model: 'gemini-3.5-flash' });
-      const result = await model.generateContent(prompt);
-      return result.response.text();
-    } catch (err) {
-      console.warn('Gemini error, rotating key:', err.message);
-      rotateGeminiKey();
-    }
+// Bound the number of in-flight Gemini requests. Sentiment used to run one batch
+// at a time, so a 1000+ comment video took minutes — long enough for a hosting
+// proxy to kill the request ("upstream error"). Batches now fan out concurrently;
+// this counting semaphore keeps the fan-out within the keys' rate limits.
+const GEMINI_CONCURRENCY = 8;
+let geminiActive = 0;
+const geminiWaiters = [];
+
+function acquireGeminiSlot() {
+  if (geminiActive < GEMINI_CONCURRENCY) {
+    geminiActive++;
+    return Promise.resolve();
   }
-  throw new Error('All Gemini API keys exhausted');
+  return new Promise(resolve => geminiWaiters.push(resolve));
+}
+
+function releaseGeminiSlot() {
+  const next = geminiWaiters.shift();
+  if (next) next();            // hand the slot straight to the next waiter
+  else geminiActive--;         // otherwise free it
+}
+
+async function callGemini(prompt) {
+  await acquireGeminiSlot();
+  try {
+    const maxRetries = Math.max(geminiKeys.length, 1);
+    let lastErr;
+    for (let i = 0; i < maxRetries; i++) {
+      try {
+        const genAI = new GoogleGenerativeAI(getGeminiKey());
+        const model = genAI.getGenerativeModel({
+          model: 'gemini-3.5-flash',
+          // gemini-3.5-flash is a thinking model. For these classify/translate
+          // tasks thinking adds latency (and can eat the output budget) with no
+          // quality gain, so disable it.
+          generationConfig: { thinkingConfig: { thinkingBudget: 0 } },
+        });
+        const result = await model.generateContent(prompt);
+        return result.response.text();
+      } catch (err) {
+        lastErr = err;
+        console.warn('Gemini error, trying next key:', err.message);
+      }
+    }
+    throw new Error('All Gemini API keys exhausted: ' + (lastErr && lastErr.message));
+  } finally {
+    releaseGeminiSlot();
+  }
 }
 
 // --- Sentiment analysis ---
@@ -206,10 +240,13 @@ async function analyzeSentiment(comments) {
   }
 
   const batchSize = 30;
-  const results = [];
-
+  const batches = [];
   for (let i = 0; i < comments.length; i += batchSize) {
-    const batch = comments.slice(i, i + batchSize);
+    batches.push(comments.slice(i, i + batchSize));
+  }
+
+  // Fan the batches out concurrently; callGemini's semaphore bounds the load.
+  const perBatch = await Promise.all(batches.map(async (batch) => {
     const prompt = `You are a sentiment classifier for YouTube comments. Classify each comment's emotional tone toward the video/content/product as exactly one of: positive, negative, or neutral.
 
 Guidelines:
@@ -250,23 +287,25 @@ ${batch.map((c, idx) => `[${idx}] ${c.text}`).join('\n')}`;
       if (!jsonMatch) throw new Error('No JSON array in response');
       const parsed = JSON.parse(jsonMatch[0]);
 
+      const out = [];
       for (const entry of parsed) {
         const comment = batch[entry.index];
         if (comment) {
-          results.push({
+          out.push({
             ...comment,
             sentiment: entry.sentiment || 'neutral',
             isQuestion: entry.isQuestion || false,
           });
         }
       }
+      return out;
     } catch (err) {
       console.warn('Sentiment batch failed:', err.message);
-      for (const c of batch) {
-        results.push({ ...c, sentiment: 'neutral', isQuestion: c.text.includes('?') });
-      }
+      return batch.map(c => ({ ...c, sentiment: 'neutral', isQuestion: c.text.includes('?') }));
     }
-  }
+  }));
+
+  const results = perBatch.flat();
 
   const total = results.length;
   const pos = results.filter(r => r.sentiment === 'positive').length;
@@ -304,9 +343,15 @@ async function translateComments(comments) {
   if (!toTranslate.length) return comments;
 
   const batchSize = 30;
+  const jobs = [];
   for (let i = 0; i < toTranslate.length; i += batchSize) {
-    const batch = toTranslate.slice(i, i + batchSize);
-    const batchIndices = indices.slice(i, i + batchSize);
+    jobs.push({
+      batch: toTranslate.slice(i, i + batchSize),
+      batchIndices: indices.slice(i, i + batchSize),
+    });
+  }
+
+  await Promise.all(jobs.map(async ({ batch, batchIndices }) => {
     const prompt = `Translate each of the following comments to English. Return ONLY a JSON array of strings, one translation per comment, in the same order. Keep translations concise.
 
 Comments:
@@ -329,7 +374,7 @@ ${batch.map((t, idx) => `[${idx}] ${t}`).join('\n')}`;
     } catch (err) {
       console.warn('Translation batch failed:', err.message);
     }
-  }
+  }));
   return comments;
 }
 
@@ -375,8 +420,14 @@ app.post('/api/analyze', async (req, res) => {
     filtered.sort((a, b) => b.likeCount - a.likeCount);
 
     const keywords = extractTopKeywords(filtered);
+    // The overall sentiment is just an aggregate mood gauge, so sample up to
+    // OVERALL_SENTIMENT_CAP top comments rather than classifying every one — on a
+    // 2000-comment video that's the difference between ~15s and 3+ minutes (which
+    // is what tripped the deployment's request timeout). The relevant-comment
+    // view below stays full since that's the detail users actually read.
+    const OVERALL_SENTIMENT_CAP = 900;
     const [overallSentiment, relevantSentiment, summary] = await Promise.all([
-      analyzeSentiment(allComments),
+      analyzeSentiment(allComments.slice(0, OVERALL_SENTIMENT_CAP)),
       analyzeSentiment(filtered),
       generateSummary(filtered, stats.title),
     ]);

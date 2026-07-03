@@ -36,8 +36,23 @@ async function analyze() {
       body: JSON.stringify({ url }),
     });
 
-    const data = await res.json();
-    if (!res.ok) throw new Error(data.error || 'Analysis failed');
+    // Read the body as text first: on errors, a hosting proxy may return a
+    // plain-text/HTML body (e.g. "upstream error" on a timeout) that isn't JSON.
+    // Parsing that directly would throw a cryptic "Unexpected token" message and
+    // hide the real status.
+    const raw = await res.text();
+    let data;
+    try {
+      data = JSON.parse(raw);
+    } catch {
+      const snippet = raw.trim().slice(0, 200) || res.statusText;
+      throw new Error(
+        res.status === 504 || /upstream|timeout|gateway/i.test(snippet)
+          ? `The server took too long and the request timed out (HTTP ${res.status}). This video likely has a lot of comments — try again, or a video with fewer comments.`
+          : `Server error (HTTP ${res.status}): ${snippet}`
+      );
+    }
+    if (!res.ok) throw new Error(data.error || `Analysis failed (HTTP ${res.status})`);
 
     analysisData = data;
     renderResults(data);
